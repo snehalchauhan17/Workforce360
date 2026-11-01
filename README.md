@@ -37,19 +37,7 @@ The application combines a .NET backend, Angular frontend, relational database, 
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    A[Angular Frontend] -->|REST API + JWT| B[ASP.NET Core API]
-    B --> C[Authentication and Authorization]
-    B --> D[Application Services]
-    D --> E[SQL Server]
-    B --> F[MCP Endpoint]
-    F --> G[MCP Client / Tool Discovery]
-    G --> H[OpenAI Integration]
-    H --> G
-    G --> F
-    F --> D
-```
+![Workforce360 Architecture](docs/workforce360-architecture.png)
 
 The AI integration allows the assistant to discover and invoke backend tools through MCP rather than accessing the database directly.
 
