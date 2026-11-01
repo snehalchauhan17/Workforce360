@@ -1,82 +1,195 @@
-# Workforce360 — Enterprise workforce platform with AI + MCP
+# Workforce360 — Enterprise Workforce Management Platform
 
-A portfolio MVP using .NET 10, ASP.NET Core, SQL Server, EF Core, Angular, OpenAI and the official MCP C# SDK.
+An enterprise-oriented workforce management application built with **ASP.NET Core, Angular, SQL Server, and Model Context Protocol (MCP)**, featuring an AI-powered assistant for workforce-related queries.
 
-## Included
-- Employee directory, department analytics, pending leave list and leave request creation.
-- JWT-protected API and Development-only demo login.
-- MCP Streamable HTTP endpoint hosted inside the same ASP.NET Core API (`/mcp`).
-- MCP tools: `search_employees`, `get_department_summary`, `get_pending_leave_requests`.
-- OpenAI integration via `Microsoft.Extensions.AI`; MCP client discovers tools and passes them to the model.
-- Angular chat UI, xUnit tests and Docker Compose.
+## Overview
 
-This is a learning/portfolio MVP, not a production HR/payroll system. It uses fictional seed data and does not expose salary, bank, or similarly sensitive fields to AI.
+Workforce360 is a full-stack application designed to simplify workforce data management and provide conversational access to organizational information.
 
-## Requirements
-.NET 10 SDK, SQL Server or Docker, Node.js 20.19+/22.12+, OpenAI API key with API billing enabled.
+The application combines a .NET backend, Angular frontend, relational database, and an AI integration powered by OpenAI and MCP.
 
-## Configure secrets
-From `src/Workforce360.Api`:
-```bash
-dotnet user-secrets init
-dotnet user-secrets set "OpenAI:ApiKey" "YOUR_OPENAI_API_KEY"
-dotnet user-secrets set "Demo:Password" "A-Strong-Local-Only-Password"
-dotnet user-secrets set "Jwt:SigningKey" "YOUR_BASE64_RANDOM_KEY"
+## Key Features
+
+- **Authentication:** JWT-based authentication with role-protected API endpoints.
+- **Employee Management:** Access employee information through backend services.
+- **Department Management:** Retrieve department information and headcount.
+- **Leave Management:** Query pending leave requests.
+- **AI Assistant:** Ask workforce-related questions using natural language.
+- **MCP Integration:** Expose backend capabilities through MCP tools.
+- **API Documentation:** Interactive API documentation using Swagger/OpenAPI.
+- **Database Integration:** SQL Server with Entity Framework Core.
+- **Automated Tests:** xUnit test project.
+
+## Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | Angular, TypeScript |
+| Backend | C#, ASP.NET Core Web API |
+| Database | Microsoft SQL Server |
+| ORM | Entity Framework Core |
+| Authentication | JWT Bearer |
+| AI | OpenAI API |
+| AI Tool Integration | Model Context Protocol (MCP) |
+| API Documentation | Swagger / OpenAPI |
+| Testing | xUnit |
+| Containerization | Docker, Docker Compose |
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Angular Frontend] -->|REST API + JWT| B[ASP.NET Core API]
+    B --> C[Authentication and Authorization]
+    B --> D[Application Services]
+    D --> E[SQL Server]
+    B --> F[MCP Endpoint]
+    F --> G[MCP Client / Tool Discovery]
+    G --> H[OpenAI Integration]
+    H --> G
+    G --> F
+    F --> D
 ```
-Generate key using `openssl rand -base64 48`. Never commit secrets.
 
-## Run SQL Server
+The AI integration allows the assistant to discover and invoke backend tools through MCP rather than accessing the database directly.
+
+## Project Structure
+
+```text
+Workforce360/
+├── src/
+│   └── Workforce360.Api/
+│       ├── Controllers/
+│       ├── Services/
+│       ├── Data/
+│       └── Program.cs
+├── frontend/
+│   └── workforce360-ui/
+│       └── src/
+├── tests/
+│   └── Workforce360.Tests/
+├── docker-compose.yml
+└── README.md
+```
+
+## Prerequisites
+
+Install the following:
+
+- .NET 10 SDK
+- Node.js and npm
+- Angular CLI
+- Docker Desktop
+- Git
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/snehalchauhan17/Workforce360.git
+cd Workforce360
+```
+
+### 2. Start SQL Server
+
 ```bash
 docker compose up -d sql
 ```
-The compose file uses local-only credentials; change them before any shared deployment.
 
-## Run API
+### 3. Configure application secrets
+
+Navigate to the API project:
+
 ```bash
 cd src/Workforce360.Api
+```
+
+Configure local secrets using .NET User Secrets:
+
+```bash
+dotnet user-secrets set "OpenAI:ApiKey" "YOUR_OPENAI_API_KEY"
+dotnet user-secrets set "Jwt:SigningKey" "YOUR_SECURE_BASE64_SIGNING_KEY"
+dotnet user-secrets set "Demo:Password" "YOUR_DEMO_PASSWORD"
+```
+
+Use a securely generated signing key and never commit real credentials.
+
+### 4. Run the backend
+
+```bash
 dotnet restore
 dotnet run
 ```
-The launch profile uses `http://localhost:5080` and `https://localhost:7080`. Swagger: `/swagger`.
-In Development only, the app uses `EnsureCreated` and seeds fictional demo records. Replace this with EF Core migrations for production.
 
-## Demo login (Development only)
-`POST http://localhost:5080/api/auth/demo-login`
-```json
-{"email":"hr.admin@workforce360.local","password":"YOUR_CONFIGURED_DEMO_PASSWORD"}
-```
-Use the returned access token as `Authorization: Bearer <token>`. This demo login is not a production identity system; replace it with ASP.NET Core Identity or OIDC/Entra ID.
+API development URLs:
 
-## MCP
-MCP endpoint: `http://localhost:5080/mcp` (Streamable HTTP). It requires an HRAdmin or HRManager JWT. Test with [MCP Inspector](https://github.com/modelcontextprotocol/inspector), selecting Streamable HTTP and providing the bearer token.
+- HTTP: http://localhost:5080
+- HTTPS: https://localhost:7080
+- Swagger: http://localhost:5080/swagger
 
-The AI service connects to this endpoint using the caller's JWT, calls `McpClient.ListToolsAsync()`, and passes the discovered `McpClientTool` functions to OpenAI through `Microsoft.Extensions.AI`. `UseFunctionInvocation()` executes model-selected tool calls.
+### 5. Run the Angular frontend
 
-## Test AI
-`POST /api/ai/chat` with bearer token:
-```json
-{"message":"How many active employees are in each department?"}
-```
-The internal MCP URL is `Mcp:Endpoint` in appsettings. If you change the API port, update it.
+Open another terminal:
 
-## Angular UI
 ```bash
 cd frontend/workforce360-ui
 npm install
 npm start
 ```
-Open `http://localhost:4200`. Sign in using the demo email and configured password. The API enables a narrowly scoped CORS policy for this local Angular origin; replace it with your deployed frontend origin in other environments.
 
-## Tests
+If the start script is unavailable:
+
 ```bash
-dotnet test tests/Workforce360.Tests/Workforce360.Tests.csproj
+npx ng serve
 ```
 
-## Security and next steps
-- MCP and AI routes require HR roles; AI-to-MCP forwards the authenticated caller's JWT.
-- MCP tools call application services, never arbitrary SQL.
-- Tool inputs are untrusted and must be validated server-side.
-- Add per-user/team/tenant data scoping before introducing non-HR users.
-- Add rate limits, structured audit logs, API integration tests, MCP authorization tests and secret management before production.
-- Before write tools (approval/payroll changes), add human confirmation, idempotency, audit trails and explicit authorization.
-- Not included: full identity provider, payroll engine, attendance ingestion, RAG, persistent chat history, leave approval write-tools, production CI/CD.
+Open http://localhost:4200.
+
+### 6. Run tests
+
+From the repository root:
+
+```bash
+dotnet test
+```
+
+## AI Assistant
+
+The AI assistant supports natural-language workforce queries, such as:
+
+- How many active employees are in each department?
+- Show me the department information.
+- What leave requests are pending?
+
+The assistant uses OpenAI integration and MCP tools to interact with backend application capabilities.
+
+**Security principle:** The AI model is not an authorization boundary. Access control must be enforced by the backend.
+
+## Security
+
+- Keep API keys and credentials outside source control.
+- Use JWT authentication for protected endpoints.
+- Enforce authorization in backend services and MCP tools.
+- Avoid exposing sensitive employee information unnecessarily.
+- Never allow unrestricted database queries generated by an AI model.
+
+## Current Project Scope
+
+This repository is a development starter implementation. Features such as full payroll processing, production identity-provider integration, persistent AI conversation history, and production deployment configuration are not included in the current MVP.
+
+## Future Enhancements
+
+- Employee lifecycle management
+- Advanced workforce analytics
+- Attendance management
+- Leave approval workflows
+- Role-based dashboards
+- Production-ready CI/CD pipeline
+- Expanded automated testing
+
+## Author
+
+**Workforce360 — Enterprise Workforce Management Platform**
+
+Built using ASP.NET Core, Angular, SQL Server, OpenAI, and MCP.
