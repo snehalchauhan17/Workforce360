@@ -1,0 +1,22 @@
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "LocalOnly_StrongPassword123!"
+    ports: ["1433:1433"]
+    volumes: ["workforce360-sql-data:/var/opt/mssql"]
+  api:
+    build: { context: ., dockerfile: src/Workforce360.Api/Dockerfile }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__WorkforceDb: "Server=sql,1433;Database=Workforce360Db;User Id=sa;Password=LocalOnly_StrongPassword123!;TrustServerCertificate=True;Encrypt=False"
+      Mcp__Endpoint: "http://localhost:8080/mcp"
+      OpenAI__ApiKey: "${OPENAI_API_KEY}"
+      Demo__Password: "${WORKFORCE_DEMO_PASSWORD}"
+      Jwt__SigningKey: "${JWT_SIGNING_KEY}"
+    ports: ["5080:8080"]
+    depends_on: [sql]
+volumes:
+  workforce360-sql-data:
